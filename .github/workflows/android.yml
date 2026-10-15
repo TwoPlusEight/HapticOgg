@@ -53,15 +53,31 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
+      # splits 已按 ABI 拆分：assembleRelease 一次产出 universal + 各 ABI 的 APK。
       - name: Assemble release APKs
         run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      # 先列出真实产物再归集，命名不符时直接告诉你是哪些文件，不用靠猜。
+      - name: Collect APKs
+        run: |
+          set -euo pipefail
+          echo "构建产物："
+          find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -printf '%f\t%s bytes\n' | sort
+          mkdir -p dist
+          for abi in arm64-v8a armeabi-v7a universal; do
+            src="app/build/outputs/apk/release/app-$abi-release.apk"
+            if [ ! -f "$src" ]; then
+              echo "::error::$src 不存在：请确认 app/build.gradle.kts 里的 splits.abi 已提交并推送到本次运行的提交"
+              exit 1
+            fi
+            cp "$src" "dist/app-$abi-release.apk"
+          done
 
       - name: Verify signatures
         run: |
           set -euo pipefail
           APKSIGNER=$(ls "${ANDROID_SDK_ROOT:-$ANDROID_HOME}"/build-tools/*/apksigner | sort -V | tail -n 1)
-          for abi in arm64-v8a armeabi-v7a universal; do
-            apk="app/build/outputs/apk/release/app-$abi-release.apk"
+          for apk in dist/*.apk; do
             echo "::group::$apk"
             ls -lh "$apk"
             "$APKSIGNER" verify --print-certs "$apk"
@@ -74,10 +90,7 @@ jobs:
           name: hapticogg-release-apks
           if-no-files-found: error
           retention-days: 30
-          path: |
-            app/build/outputs/apk/release/app-arm64-v8a-release.apk
-            app/build/outputs/apk/release/app-armeabi-v7a-release.apk
-            app/build/outputs/apk/release/app-universal-release.apk
+          path: dist/*.apk
 
   publish:
     name: Publish GitHub Release
