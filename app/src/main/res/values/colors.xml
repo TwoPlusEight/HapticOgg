@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fluent 2 light palette -->
+    <color name="fluent_accent">#0F6CBD</color>
+    <color name="fluent_accent_pressed">#115EA3</color>
+    <color name="fluent_ripple">#260F6CBD</color>
+    <color name="fluent_canvas_top">#F7F8FA</color>
+    <color name="fluent_canvas_bottom">#EDF1F7</color>
+    <color name="fluent_surface">#FFFFFF</color>
+    <color name="fluent_stroke">#E0E0E0</color>
+    <color name="fluent_text">#242424</color>
+    <color name="fluent_text_secondary">#616161</color>
+    <color name="fluent_danger">#C4314B</color>
+</resources>

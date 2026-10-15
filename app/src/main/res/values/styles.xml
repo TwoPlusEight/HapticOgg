@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HapticOgg" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">@color/fluent_accent</item>
+        <item name="android:colorPrimary">@color/fluent_accent</item>
+        <item name="android:colorPrimaryDark">@color/fluent_accent_pressed</item>
+        <item name="android:colorControlHighlight">@color/fluent_ripple</item>
+        <item name="android:colorControlActivated">@color/fluent_accent</item>
+        <item name="android:textColorPrimary">@color/fluent_text</item>
+        <item name="android:textColorSecondary">@color/fluent_text_secondary</item>
+        <item name="android:windowBackground">@drawable/fluent_canvas</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

@@ -1,0 +1,33 @@
+# ---- 签名密钥与密码：绝不入库 ----
+keystore.properties
+*.jks
+*.keystore
+*.p12
+
+# ---- 本机相关配置 ----
+local.properties
+
+# ---- Gradle 与构建产物 ----
+.gradle/
+build/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# ---- IDE ----
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ---- 系统与杂项 ----
+.DS_Store
+Thumbs.db
+*.hprof
