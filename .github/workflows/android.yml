@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 要发布到哪个 tag（留空则只构建、不创建 Release）
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -72,6 +77,15 @@ jobs:
             fi
             cp "$src" "dist/app-$abi-release.apk"
           done
+          {
+            echo "### 本次构建产物"
+            echo ""
+            echo "| 文件 | 大小 |"
+            echo "| --- | --- |"
+            for f in dist/*.apk; do
+              echo "| $(basename "$f") | $(du -h "$f" | cut -f1) |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify signatures
         run: |
@@ -92,10 +106,15 @@ jobs:
           retention-days: 30
           path: dist/*.apk
 
+      # 手动触发又没填 release_tag 时，把"为什么没有 Release"写进运行摘要，而不是静默跳过。
+      - name: Explain skipped publish
+        if: github.ref_type != 'tag' && inputs.release_tag == ''
+        run: echo "本次为手动触发且未填 release_tag：只构建、不发布。要产出 Release，请推送 v* tag，或再次手动触发并填写 release_tag。" >> "$GITHUB_STEP_SUMMARY"
+
   publish:
     name: Publish GitHub Release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref_type == 'tag' || inputs.release_tag != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -106,13 +125,26 @@ jobs:
           name: hapticogg-release-apks
           path: apks
 
-      - name: Create release
+      # 用 runner 自带的 gh CLI 配合自动注入的 github.token：不需要 PAT，也不引入第三方 action。
+      - name: Create or update release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes \
-            "apks/app-arm64-v8a-release.apk#arm64-v8a" \
-            "apks/app-armeabi-v7a-release.apk#armeabi-v7a" \
-            "apks/app-universal-release.apk#universal"
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [ -z "$TAG" ]; then TAG="$GITHUB_REF_NAME"; fi
+          echo "发布 tag：$TAG（commit $GITHUB_SHA）"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release 已存在，覆盖上传资产"
+            gh release upload "$TAG" apks/*.apk --clobber
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --target "$GITHUB_SHA" \
+              --generate-notes \
+              "apks/app-arm64-v8a-release.apk#arm64-v8a" \
+              "apks/app-armeabi-v7a-release.apk#armeabi-v7a" \
+              "apks/app-universal-release.apk#universal"
+          fi
+          gh release view "$TAG" | head -n 6
